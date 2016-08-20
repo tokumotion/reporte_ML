@@ -15,79 +15,85 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r adwords, echo=FALSE, message=FALSE}
+# Código que llama la data
+
 library(RAdwords); library(dplyr); library(tidyr); library(scales); library(ggthemes)
 library(ggplot2); library(magrittr); library(lubridate); library(stringr)
 
+# load Google credentials
 load('~/Documents/ML_Adwords')
 VillaClub <- "828-183-0329"
 
 metricas <- metrics("CAMPAIGN_PERFORMANCE_REPORT")
-report <- statement(metricas[c(99, 89, 46, 54, 60)], 
+report.16 <- statement(metricas[c(99, 131, 89, 46, 54, 60)], 
                     report = "CAMPAIGN_PERFORMANCE_REPORT",
                     start = "20160101", end = "20160818")
 data <- getData(clientCustomerId = VillaClub, google_auth = Adwords,
-                statement = report)
+                statement = report.16)
 
-report <- statement(metricas[c(99, 89, 46, 54, 60)], 
+report.15 <- statement(metricas[c(99, 131, 89, 46, 54, 60)], 
                     report = "CAMPAIGN_PERFORMANCE_REPORT",
                     start = "20150101", end = "20150818")
 data15 <- getData(clientCustomerId = VillaClub, google_auth = Adwords,
-                statement = report)
+                statement = report.15)
 
-data %<>% 
-  group_by(Month) %>% 
+data.f <- rbind(data, data15)
+
+data.f %<>% 
+  group_by(Year, Month) %>% 
   summarise_all(sum) %>% 
   mutate(CTR = Clicks/Impressions, CTO = Conversions/Clicks, CPC = Clicks/Cost,
          CPO = Conversions/Cost, CPM = Cost/Impressions*1000) %>% 
-  gather(var, val, 2:10)
+  gather(var, val, 3:11)
 
-data15 %<>% 
-  group_by(Month) %>% 
-  summarise_all(sum) %>% 
-  mutate(CTR = Clicks/Impressions, CTO = Conversions/Clicks, CPC = Clicks/Cost,
-         CPO = Conversions/Cost, CPM = Cost/Impressions*1000) %>% 
-  gather(var, val, 2:10)
+data.f$M <- month(data.f$Month)
 
 data$Month <- ymd(data$Month)
 data15$Month <- ymd(data15$Month)
-
-data$M <- month(data$Month)
-data15$M <- month(data15$Month)
 ```
 
 ## Impresiones - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
 
-```{r pressure, echo=FALSE, message=FALSE}
-ggplot() + 
-  geom_line(data = data[which(data$var == 'Impressions'),], 
-            aes(x = M, y = val, color = '2016'), stat = 'identity') +
-  geom_line(data = data15[which(data15$var == 'Impressions'),], 
-            aes(x = M, y = val, color = '2015'), stat = 'identity') + 
+```{r pressure, echo=FALSE, message=FALSE, f.align='center'}
+ggplot(data.f[which(data.f$var == 'Impressions'),], aes(x = M, y = val, 
+                                                        color = Year)) + 
+  geom_line(stat = 'identity') + 
   ylab('Impresiones') + xlab('Mes') +
-  theme_minimal() +
-  scale_y_continuous(labels = comma, breaks = c(0, 50000, 100000, 150000, 200000, 250000, 300000)) + 
+  scale_y_continuous(labels = comma, breaks = c(0, 50000, 100000, 150000, 
+                                                200000, 250000, 300000)) + 
   scale_x_continuous(breaks = seq(1,8), 
                      labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
                                 'Jun', 'Jul', 'Ago')) + 
-  labs(color = 'Año') +
-  theme_minimal()
+  facet_grid(Year~.) +
+  labs(color = 'Año') 
+```
+
+## Clicks - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
+
+```{r , echo=FALSE, message=FALSE, f.align='center'}
+ggplot(data.f[which(data.f$var == 'Clicks'),], aes(x = M, y = val, color = Year)) + 
+  geom_line(stat = 'identity') +
+  ylab('Clicks') + xlab('Mes') +
+  scale_y_continuous(labels = comma, breaks = c(0, 1000, 2000, 3000, 4000, 5000, 
+                                                6000, 7000)) + 
+  scale_x_continuous(breaks = seq(1,8), 
+                     labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
+                                'Jun', 'Jul', 'Ago')) + 
+  facet_grid(Year~.) +
+  labs(color = 'Año')
 ```
 
 ## CTR - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
 
-```{r , echo=FALSE, message=FALSE}
-ggplot() + 
-  geom_line(data = data[which(data$var == 'CTR'),], 
-            aes(x = M, y = val, color = '2016'), stat = 'identity') + 
-  geom_line(data = data15[which(data15$var == 'CTR'),], 
-            aes(x = M, y = val, color = '2015'), stat = 'identity') +
+```{r , echo=FALSE, message=FALSE, f.align='center'}
+ggplot(data.f[which(data.f$var == 'CTR'),], aes(x = M, y = val, color = Year)) + 
+  geom_line(stat = 'identity') +
   ylab('CTR (%)') + xlab('Mes') +
   scale_y_continuous(labels = percent, limits = c(0, 0.04)) + 
   scale_x_continuous(breaks = seq(1,8), 
                      labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
                                 'Jun', 'Jul', 'Ago')) + 
-  labs(color = 'Año') +
-  theme_minimal()
+  facet_grid(Year~.) +
+  labs(color = 'Año')
 ```
-
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
