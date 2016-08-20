@@ -1,26 +1,24 @@
 ---
 title: Reporte Villaclub - Comparativo del período 01/01/2015 al 18/08/2015 vs 01/01/2016
   al 18/08/2016
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Resultados de las campañas de Adwords
+## Resultados de campañas de Adwords
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r adwords, echo=FALSE, message=FALSE}
-# Código que llama la data
 
 library(RAdwords); library(dplyr); library(tidyr); library(scales); library(ggthemes)
 library(ggplot2); library(magrittr); library(lubridate); library(stringr)
 
-# load Google credentials
 load('~/Documents/ML_Adwords')
 VillaClub <- "828-183-0329"
 
@@ -42,8 +40,8 @@ data.f <- rbind(data, data15)
 data.f %<>% 
   group_by(Year, Month) %>% 
   summarise_all(sum) %>% 
-  mutate(CTR = Clicks/Impressions, CTO = Conversions/Clicks, CPC = Clicks/Cost,
-         CPO = Conversions/Cost, CPM = Cost/Impressions*1000) %>% 
+  mutate(CTR = Clicks/Impressions, CTO = Conversions/Clicks, CPC = Cost/Clicks,
+         CPO = Cost/Conversions, CPM = Cost/Impressions*1000) %>% 
   gather(var, val, 3:11)
 
 data.f$M <- month(data.f$Month)
@@ -54,28 +52,44 @@ data15$Month <- ymd(data15$Month)
 
 ## Impresiones - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
 
-```{r pressure, echo=FALSE, message=FALSE, f.align='center'}
+```{r pressure, echo=FALSE, message=FALSE, f.align='center', fig.height=3.5}
 ggplot(data.f[which(data.f$var == 'Impressions'),], aes(x = M, y = val, 
                                                         color = Year)) + 
   geom_line(stat = 'identity') + 
   ylab('Impresiones') + xlab('Mes') +
-  scale_y_continuous(labels = comma, breaks = c(0, 50000, 100000, 150000, 
-                                                200000, 250000, 300000)) + 
+  scale_y_continuous(labels = comma, breaks = seq(0, 300000, by = 50000),
+                     limits = c(0, 300000)) + 
   scale_x_continuous(breaks = seq(1,8), 
                      labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
                                 'Jun', 'Jul', 'Ago')) + 
+  theme(panel.grid.minor.y = element_blank()) +
   facet_grid(Year~.) +
   labs(color = 'Año') 
 ```
 
 ## Clicks - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
 
-```{r , echo=FALSE, message=FALSE, f.align='center'}
+```{r , echo=FALSE, message=FALSE, f.align='center', fig.height= 3.5}
 ggplot(data.f[which(data.f$var == 'Clicks'),], aes(x = M, y = val, color = Year)) + 
   geom_line(stat = 'identity') +
   ylab('Clicks') + xlab('Mes') +
-  scale_y_continuous(labels = comma, breaks = c(0, 1000, 2000, 3000, 4000, 5000, 
-                                                6000, 7000)) + 
+  scale_y_continuous(labels = comma, breaks = seq(0, 7000, by = 1000),
+                     limits = c(0, 7500)) + 
+  scale_x_continuous(breaks = seq(1,8), 
+                     labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
+                                'Jun', 'Jul', 'Ago')) + 
+  facet_grid(Year~.) +
+  theme(panel.grid.minor.y = element_blank()) +
+  labs(color = 'Año')
+```
+
+## Costo - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
+
+```{r , echo=FALSE, message=FALSE, f.align='center', fig.height= 3.5}
+ggplot(data.f[which(data.f$var == 'Cost'),], aes(x = M, y = val, color = Year)) + 
+  geom_line(stat = 'identity') +
+  ylab('Inversión (US$)') + xlab('Mes') +
+  scale_y_continuous(labels = dollar, limits = c(0, 4500)) + 
   scale_x_continuous(breaks = seq(1,8), 
                      labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
                                 'Jun', 'Jul', 'Ago')) + 
@@ -85,7 +99,7 @@ ggplot(data.f[which(data.f$var == 'Clicks'),], aes(x = M, y = val, color = Year)
 
 ## CTR - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
 
-```{r , echo=FALSE, message=FALSE, f.align='center'}
+```{r , echo=FALSE, message=FALSE, f.align='center', fig.height= 3.5}
 ggplot(data.f[which(data.f$var == 'CTR'),], aes(x = M, y = val, color = Year)) + 
   geom_line(stat = 'identity') +
   ylab('CTR (%)') + xlab('Mes') +
@@ -96,4 +110,84 @@ ggplot(data.f[which(data.f$var == 'CTR'),], aes(x = M, y = val, color = Year)) +
   facet_grid(Year~.) +
   labs(color = 'Año')
 ```
+
+## CTO (Conversion to Opportunity) - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
+
+```{r , echo=FALSE, message=FALSE, f.align='center', fig.height= 3.5}
+ggplot(data.f[which(data.f$var == 'CTO'),], aes(x = M, y = val, color = Year)) + 
+  geom_line(stat = 'identity') +
+  ylab('CTO (US$)') + xlab('Mes') +
+  scale_y_continuous(labels = percent, limits = c(0, 0.07)) + 
+  scale_x_continuous(breaks = seq(1,8), 
+                     labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
+                                'Jun', 'Jul', 'Ago')) + 
+  facet_grid(Year~.) +
+  labs(color = 'Año')
+```
+
+## Conversiones - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
+
+```{r , echo=FALSE, message=FALSE, f.align='center', fig.height= 3.5}
+ggplot(data.f[which(data.f$var == 'Conversions'),], 
+       aes(x = M, y = val, color = Year)) + 
+  geom_line(stat = 'identity') +
+  ylab('Conversiones') + xlab('Mes') +
+  scale_y_continuous(breaks = seq(0, 400, by = 50), limits = c(0, 400)) + 
+  scale_x_continuous(breaks = seq(1,8), 
+                     labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
+                                'Jun', 'Jul', 'Ago')) + 
+  theme(panel.grid.minor.y = element_blank()) +
+  facet_grid(Year~.) +
+  labs(color = 'Año')
+```
+
+## CPC (Costo por Click) - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
+
+```{r , echo=FALSE, message=FALSE, f.align='center', fig.height= 3.5}
+ggplot(data.f[which(data.f$var == 'CPC'),], 
+       aes(x = M, y = val, color = Year)) + 
+  geom_line(stat = 'identity') +
+  ylab('CPC (US$)') + xlab('Mes') +
+  scale_y_continuous(labels = dollar, limits = c(0, 1)) + 
+  scale_x_continuous(breaks = seq(1,8), 
+                     labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
+                                'Jun', 'Jul', 'Ago')) + 
+  facet_grid(Year~.) +
+  labs(color = 'Año')
+```
+
+## CPM (Costo por Mil Impresiones) - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
+
+```{r , echo=FALSE, message=FALSE, f.align='center', fig.height= 3.5}
+ggplot(data.f[which(data.f$var == 'CPM'),], 
+       aes(x = M, y = val, color = Year)) + 
+  geom_line(stat = 'identity') +
+  ylab('CPM (US$)') + xlab('Mes') +
+  scale_y_continuous(labels = dollar, limits = c(0, 30), 
+                     breaks = seq(0, 30, by = 5)) + 
+  scale_x_continuous(breaks = seq(1,8), 
+                     labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
+                                'Jun', 'Jul', 'Ago')) + 
+  theme(panel.grid.minor.y = element_blank()) +
+  facet_grid(Year~.) +
+  labs(color = 'Año')
+```
+
+## CPO (Cost per Opportunity) - 01/01/15 al 17/08/15 vs 01/01/16 al 17/08/16
+
+```{r , echo=FALSE, message=FALSE, f.align='center', fig.height= 3.5}
+ggplot(data.f[which(data.f$var == 'CPO'),], 
+       aes(x = M, y = val, color = Year)) + 
+  geom_line(stat = 'identity') +
+  ylab('CPO (US$)') + xlab('Mes') +
+  scale_y_continuous(labels = dollar, limits = c(0, 20), 
+                     breaks = seq(0, 20, by = 5)) + 
+  scale_x_continuous(breaks = seq(1,8), 
+                     labels = c('Ene', 'Feb', 'Mar', 'Abr', 'May', 
+                                'Jun', 'Jul', 'Ago')) + 
+  theme(panel.grid.minor.y = element_blank()) +
+  facet_grid(Year~.) +
+  labs(color = 'Año')
+```
+
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
