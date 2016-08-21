@@ -1,7 +1,7 @@
 ---
 title: Reporte Villaclub - Comparativo del período 01/01/2015 al 18/08/2015 vs 01/01/2016
   al 18/08/2016
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -189,5 +189,32 @@ ggplot(data.f[which(data.f$var == 'CPO'),],
   facet_grid(Year~.) +
   labs(color = 'Año')
 ```
+
+## Tabla comparativa
+
+```{r, echo=FALSE, message=FALSE}
+library(htmlTable)
+a <- data.f %>% 
+  spread(var, val) %>% 
+  select(-Month)
+a <- merge(a[which(a$Year == 2015),], a[which(a$Year == 2016),], by = 'M')
+a <- a[,c(11,21,3,13,4,14,5,15,6,16,7,17,8,18,9,19,10,20)]
+
+a[,c(15:18)] <- lapply(a[,c(15:18)], percent)
+a[,c(7:14)] <- lapply(a[,c(7:14)], dollar)
+a[,c(1:6)] <- lapply(a[,c(1:6)], comma)
+
+# no funciona para exportar a pdf :(
+
+htmlTable(x = a, 
+          header = paste(rep(c('2015', '2016'), 9)),
+          rnames = paste(c('Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 
+                           'Junio', 'Julio', 'Agosto')),
+          cgroup = c('Impresiones', 'Clicks', 'Conversiones', 'Inversión (USD)',
+                     'CPC (USD)', 'CPM (USD)', 'CPO (USD)', 'CTO (%)', 'CTR (%)'),
+          n.cgroup = c(2,2,2,2,2,2,2,2,2),
+          caption = 'Villaclub - Tabla comparativa de KPIs (2015/2016)')
+```
+
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
