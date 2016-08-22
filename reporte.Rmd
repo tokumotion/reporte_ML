@@ -204,8 +204,6 @@ a[,c(15:18)] <- lapply(a[,c(15:18)], percent)
 a[,c(7:14)] <- lapply(a[,c(7:14)], dollar)
 a[,c(1:6)] <- lapply(a[,c(1:6)], comma)
 
-# no funciona para exportar a pdf :(
-
 htmlTable(x = a, 
           header = paste(rep(c('2015', '2016'), 9)),
           rnames = paste(c('Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 
@@ -213,8 +211,10 @@ htmlTable(x = a,
           cgroup = c('Impresiones', 'Clicks', 'Conversiones', 'Inversión (USD)',
                      'CPC (USD)', 'CPM (USD)', 'CPO (USD)', 'CTO (%)', 'CTR (%)'),
           n.cgroup = c(2,2,2,2,2,2,2,2,2),
-          caption = 'Villaclub - Tabla comparativa de KPIs (2015/2016)')
+          caption = 'Villaclub - Tabla comparativa de KPIs (2015/2016)',
+          ctable = TRUE, css.cell = 'padding-left: .5em; padding-right: .5em',
+          col.rgroup = c('none', '#F7F7F7'),
+          css.cgroup = 'padding-left: .7em; padding-right: .7em')
 ```
-
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
