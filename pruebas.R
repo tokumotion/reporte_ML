@@ -1,8 +1,7 @@
 # Código que llama la data
 
-library(RAdwords); library(dplyr); library(tidyr); library(scales); library(ggthemes)
-library(ggplot2); library(magrittr); library(lubridate); library(stringr); 
-library(htmlTable)
+library(RAdwords); library(dplyr); library(tidyr); library(scales); library(stringr)
+library(ggplot2); library(magrittr); library(lubridate); library(htmlTable)
 
 # load Google credentials
 load('~/Documents/ML_Adwords')
@@ -46,21 +45,62 @@ ggplot(data = data[which(data$var == 'CTR'),], aes(x = Month, y = val)) +
 
 # Hacer las tablas
 
-a <- data.f %>% 
+funnel <- data.f %>% 
   spread(var, val) %>% 
-  select(-Month)
-a <- merge(a[which(a$Year == 2015),], a[which(a$Year == 2016),], by = 'M')
-a <- a[,c(11,21,3,13,4,14,5,15,6,16,7,17,8,18,9,19,10,20)]
+  select(-c(2, 7:11)) %>% 
+  select(2, 1, 6, 3, 4, 5) %>% 
+  lapply(. %>% as.numeric) %>% 
+  as.data.frame() 
+  
+nam <- names(funnel)
+nam %>% 
+  .[3:length(.)] %>% 
+  str_c('.$`',.,'') %>% 
+  str_c(.,'.x`','')
 
-a[,c(15:18)] <- lapply(a[,c(15:18)], percent)
-a[,c(7:14)] <- lapply(a[,c(7:14)], dollar)
-a[,c(1:6)] <- lapply(a[,c(1:6)], comma)
+fun_nel <- merge(funnel[which(funnel$Year == 2015),],
+                funnel[which(funnel$Year == 2016),], by = 'M') %>% 
+  .[,c(3, 8, 4, 9, 5, 10, 6, 11)] %>% 
+  rowwise %>% 
+  do(data.frame(., 
+                var_imp = (.$`Impressions.y` - .$`Impressions.x`)/.$`Impressions.x`)) %>% 
+  mutate(var_imp = percent(var_imp))
 
-htmlTable(x = a, 
-          header = paste(rep(c('2015', '2016'), 9)),
+funnel[,c(7:8)] <- lapply(funnel[,c(7:8)], dollar)
+funnel[,c(1:6)] <- lapply(funnel[,c(1:6)], comma)
+
+htmlTable(x = funnel, 
+          header = paste(rep(c('2015', '2016'), 4)),
           rnames = paste(c('Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 
                            'Junio', 'Julio', 'Agosto')),
-          cgroup = c('Impresiones', 'Clicks', 'Conversiones', 'Inversión (USD)',
-                     'CPC (USD)', 'CPM (USD)', 'CPO (USD)', 'CTO (%)', 'CTR (%)'),
-          n.cgroup = c(2,2,2,2,2,2,2,2,2),
-          caption = 'Villaclub - Tabla comparativa de KPIs (2015/2016)')
+          cgroup = c('Impresiones', 'Clicks', 'Conversiones', 'Inversión (USD)'),
+          n.cgroup = c(2,2,2,2),
+          caption = 'Villaclub - Funnel de conversión (2015/2016)',
+          ctable = TRUE, css.cell = 'padding-left: .5em; padding-right: .5em',
+          col.rgroup = c('none', '#F7F7F7'),
+          css.cgroup = 'padding-left: .7em; padding-right: .7em')
+
+KPI <- data.f %>% 
+  spread(var, val) %>% 
+  .[,c(3, 1, 7:11)] %>% 
+  select(1, 2, 4, 3, 5, 7, 6) %>% 
+  lapply(. %>%  as.numeric) %>% 
+  as.data.frame() 
+
+KPI <- merge(KPI[which(KPI$Year == 2015),], 
+             KPI[which(KPI$Year == 2016),], by = 'M') %>% 
+  .[,c(3, 9, 4, 10, 5, 11, 6, 12, 7, 13)]
+
+KPI[,c(1:6)] <- lapply(KPI[,c(1:6)], dollar)
+KPI[,c(7:10)] <- lapply(KPI[,c(7:10)], percent)
+
+htmlTable(x = KPI, 
+          header = paste(rep(c('2015', '2016'), 5)),
+          rnames = paste(c('Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 
+                           'Junio', 'Julio', 'Agosto')),
+          cgroup = c('CPM (USD)', 'CPC (USD)', 'CPO (USD)', 'CTR (%)', 'CTO (%)'),
+          n.cgroup = c(2,2,2,2, 2),
+          caption = 'Villaclub - Tabla de KPIs (2015/2016)',
+          ctable = TRUE, css.cell = 'padding-left: .5em; padding-right: .5em',
+          col.rgroup = c('none', '#F7F7F7'),
+          css.cgroup = 'padding-left: .7em; padding-right: .7em')
