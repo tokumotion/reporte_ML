@@ -52,29 +52,30 @@ funnel <- data.f %>%
   lapply(. %>% as.numeric) %>% 
   as.data.frame() 
   
-nam <- names(funnel)
-nam %>% 
-  .[3:length(.)] %>% 
-  str_c('.$`',.,'') %>% 
-  str_c(.,'.x`','')
+var_a <- function(x){
+  for(i in seq(2, ncol(x), by = 2)){
+    var = (x[,i] - x[,(i-1)])/x[,i]
+    x = cbind(x, var)
+  }
+  return(x)
+}
 
-fun_nel <- merge(funnel[which(funnel$Year == 2015),],
+funnel <- merge(funnel[which(funnel$Year == 2015),],
                 funnel[which(funnel$Year == 2016),], by = 'M') %>% 
   .[,c(3, 8, 4, 9, 5, 10, 6, 11)] %>% 
-  rowwise %>% 
-  do(data.frame(., 
-                var_imp = (.$`Impressions.y` - .$`Impressions.x`)/.$`Impressions.x`)) %>% 
-  mutate(var_imp = percent(var_imp))
+  var_a %>% 
+  .[c(1, 2, 9, 3, 4, 10, 5, 6, 11, 7, 8, 12)]
 
-funnel[,c(7:8)] <- lapply(funnel[,c(7:8)], dollar)
-funnel[,c(1:6)] <- lapply(funnel[,c(1:6)], comma)
+funnel[,c(10, 11)] <- lapply(funnel[,c(10, 11)], dollar)
+funnel[,c(1, 2, 4, 5, 7, 8)] <- lapply(funnel[,c(1, 2, 4, 5, 7, 8)], comma)
+funnel[,c(3, 6, 9, 12)] <- lapply(funnel[,c(3, 6, 9, 12)], percent)
 
 htmlTable(x = funnel, 
-          header = paste(rep(c('2015', '2016'), 4)),
+          header = paste(rep(c('2015', '2016', '∆%'), 4)),
           rnames = paste(c('Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 
                            'Junio', 'Julio', 'Agosto')),
           cgroup = c('Impresiones', 'Clicks', 'Conversiones', 'Inversión (USD)'),
-          n.cgroup = c(2,2,2,2),
+          n.cgroup = c(3,3,3,3),
           caption = 'Villaclub - Funnel de conversión (2015/2016)',
           ctable = TRUE, css.cell = 'padding-left: .5em; padding-right: .5em',
           col.rgroup = c('none', '#F7F7F7'),
